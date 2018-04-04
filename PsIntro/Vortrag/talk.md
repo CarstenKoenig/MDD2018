@@ -29,6 +29,29 @@ fizzBuzzNumber n =
     _                -> show n
 ```
 
+::: notes
+- wollen FizzBuzz für ein Array in Range
+:::
+
+---
+
+```haskell
+fizzBuzzNumbers :: Int -> Int -> Array String
+fizzBuzzNumbers from to =
+  map fizzBuzzNumber (range from to)
+```
+
+::: notes
+suche nach [intercalate](https://pursuit.purescript.org/packages/purescript-foldable-traversable/3.4.0/docs/Data.Foldable#v:intercalate)
+über Pursuit vorführen
+:::
+
+---
+
+```haskell
+log (intercalate "\n" (fizzBuzzNumbers 1 30))
+```
+
 ## Algebraische Datentypen
 Was sind ADTs - Sum- und Product-Types erklären
 

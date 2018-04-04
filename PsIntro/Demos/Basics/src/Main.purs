@@ -4,6 +4,7 @@ import Prelude
 
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Console (CONSOLE, log)
+import Data.Array (intercalate, range)
 import Data.Tuple (Tuple(..))
 
 
@@ -16,6 +17,11 @@ fizzBuzzNumber n =
     _                -> show n
 
 
+fizzBuzzNumbers :: Int -> Int -> Array String
+fizzBuzzNumbers from to =
+  map fizzBuzzNumber (range from to)
+  
+
 main :: forall e. Eff (console :: CONSOLE | e) Unit
 main = do
-  log "Hello sailor!"
+  log $ intercalate "\n" $ fizzBuzzNumbers 1 30
