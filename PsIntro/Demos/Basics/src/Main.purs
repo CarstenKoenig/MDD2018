@@ -25,3 +25,20 @@ fizzBuzzNumbers from to =
 main :: forall e. Eff (console :: CONSOLE | e) Unit
 main = do
   log $ intercalate "\n" $ fizzBuzzNumbers 1 30
+
+
+data Result err res
+  = Err err
+  | Ok res
+
+
+withDefault :: ∀ err res . res -> Result err res -> res
+withDefault def (Err _) = def
+withDefault _   (Ok  v) = v
+
+
+-- notWorking :: forall s . Show s => (s -> String) -> String
+-- notWorking toStr = toStr 42 <> " and " <> toStr true
+
+useIt :: (forall s . Show s => s -> String) -> String
+useIt toStr = toStr 42 <> " and " <> toStr true

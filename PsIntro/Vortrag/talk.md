@@ -53,7 +53,66 @@ log (intercalate "\n" (fizzBuzzNumbers 1 30))
 ```
 
 ## Algebraische Datentypen
-Was sind ADTs - Sum- und Product-Types erklären
+
+**Produkt-** / **Summen**-Datentypen
+
+---
+
+### Produkt
+
+```haskell
+data Tupel a b
+  = Tupel a b
+
+tupel = Tupel 42 "Handtuch"
+
+first :: ∀ a b . Tupel a b -> a
+first (Tupel a _) = a
+```
+
+---
+
+#### Warum *Produkt*?
+
+Wieviele mögliche Werte hat der Typ
+
+```haskell
+data Kombination = MkKomb Bool Char
+```
+
+---
+
+### Summen
+
+```haskell
+data Result err res
+  = Err err
+  | Ok res
+
+okRes :: Result String Int
+okRes = Ok 42
+
+withDefault :: ∀ err res . res -> Result err res -> res
+withDefault def (Err _) = def
+withDefault _   (Ok  v) = v
+```
+
+---
+
+#### Warum *Summe*?
+
+Wieviele mögliche Werte hat der Typ
+
+```haskell
+data Alternative = Entweder Bool | Oder Char
+```
+
+
+## Records
+Product-Types mit Labels
+
+## Row-Polymorphism
+richtig flexible Records
 
 ## Typklassen
 unbedingt JS zeigen
@@ -61,8 +120,22 @@ unbedingt JS zeigen
 ## Higher-Kinded-Types
 nicht unbedingt "freundlich" ;)
 
-## Row-Polymorphism
-richtig flexible Records
+## Higher-Ranked-Types
+hier gibt es ein `toStr` für ein festes `s`
+
+```haskell
+notWorking :: forall s . Show s => (s -> String) -> String
+notWorking toStr = toStr 42 <> " and " <> toStr true
+                         ^^^ could not match type
+```
+
+---
+hier gibt es für jedes `s` ein eigenes `toStr` 
+
+```haskell
+useIt :: (forall s . Show s => s -> String) -> String
+useIt toStr = toStr 42 <> " and " <> toStr true
+```
 
 ## Effects
 Seiteneffekte sind wirklich explizit
