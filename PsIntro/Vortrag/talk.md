@@ -6,11 +6,28 @@ date: 10. April 2018
 
 # Features
 
-## Interop
-zu Javascript und zurück recht einfach
-
 ## Funktionen
-Funktionen und Currying erklären
+
+Funktionen in **PureScript** sind *rein* und *total*
+
+$$f : Domain \rightarrow \text{Co-Domain}$$
+
+::: notes
+für partielle Funktionen siehe [hier](https://github.com/purescript/documentation/blob/master/guides/The-Partial-type-class.md)
+:::
+
+---
+
+### Beispiel
+```haskell
+fizzBuzzNumber :: Int -> String
+fizzBuzzNumber n =
+  case Tuple (n `mod` 3 == 0) (n `mod` 5 == 0) of
+    Tuple true true  -> "FizzBuzz"
+    Tuple true false -> "Fizz"
+    Tuple false true -> "Buzz"
+    _                -> show n
+```
 
 ## Algebraische Datentypen
 Was sind ADTs - Sum- und Product-Types erklären
@@ -27,6 +44,8 @@ richtig flexible Records
 ## Effects
 Seiteneffekte sind wirklich explizit
 
+## Interop
+zu Javascript und zurück recht einfach
 
 # UI-Frameworks
 
