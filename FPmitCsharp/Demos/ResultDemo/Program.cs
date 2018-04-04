@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using ResultDemo.Type;
 
 namespace ResultDemo
@@ -51,6 +52,24 @@ namespace ResultDemo
         }
 
 
+        public static Result<tError, tOut> Apply<tError, tIn, tOut>(this Result<tError, Func<tIn, tOut>> resF, Result<tError, tIn> resX)
+        {
+            return resF.Match(
+                fromFail: ToFailedResult<tError, tOut>,
+                fromSuccess: f => resX.Match(
+                    fromFail: ToFailedResult<tError, tOut>,
+                    fromSuccess: x => ToSuccessResult<tError, tOut>(f(x))));
+        }
+
+        public static Result<tError, tOut> LiftA2<tError, tIn1, tIn2, tOut>(Func<tIn1, tIn2, tOut> f, Result<tError, tIn1> res1, Result<tError, tIn2> res2)
+        {
+            return
+                Curry(f)
+                    .ToSuccessResult<tError, Func<tIn1, Func<tIn2, tOut>>>()
+                    .Apply(res1)
+                    .Apply(res2);
+        }
+
         public static Result<tError, tOut> Bind<tError, tIn, tOut>(this Result<tError, tIn> result, Func<tIn, Result<tError, tOut>> bind)
         {
             return result.Match(
@@ -93,21 +112,16 @@ namespace ResultDemo
             return Try(() => f(arg1, arg2, arg3));
         }
 
-        public static Result<tError, tOut> FromTryParse<tError, tOut>(this string input, Parser<tOut> parser, Func<string, tError> onFailed)
+        public static Result<tError, tOut> TryParseWith<tError, tOut>(this string input, Parser<tOut> parser, Func<string, tError> onError)
         {
             return parser(input, out var result)
                 ? ToSuccessResult<tError, tOut>(result)
-                : ToFailedResult<tError, tOut>(onFailed(input));
-        }
-
-        public static Result<tError, tOut> TryParseWith<tError, tOut>(this string input, Parser<tOut> parser, Func<string, tError> onError)
-        {
-            return FromTryParse(input, parser, onError);
+                : ToFailedResult<tError, tOut>(onError(input));
         }
 
         public static Result<string, tOut> TryParseWith<tOut>(this string input, Parser<tOut> parser)
         {
-            return FromTryParse(input, parser, x => x);
+            return TryParseWith(input, parser, x => x);
         }
 
 
@@ -130,6 +144,43 @@ namespace ResultDemo
                 collectionSelector(src)
                     .Map(col => resultSelector(src, col)));
         }
+
+        public static Func<tIn1, Func<tIn2, tOut>> Curry<tIn1, tIn2, tOut>(this Func<tIn1, tIn2, tOut> f)
+        {
+            return x1 => x2 => f(x1, x2);
+        }
+
+        public static Result<tError, IEnumerable<tOut>> Traverse<tError, tIn, tOut>(this IEnumerable<tIn> inputs, Func<tIn, Result<tError, tOut>> toResult)
+        {
+            var successes = new List<tOut>();
+            var hadError = false;
+            var firstError = default(tError);
+
+            foreach (var input in inputs)
+            {
+                toResult(input).Match(
+                    err =>
+                    {
+                        firstError = err;
+                        hadError = true;
+                        return 0;
+                    },
+                    res =>
+                    {
+                        successes.Add(res);
+                        return 1;
+                    });
+                if (hadError)
+                    return firstError.ToFailedResult<tError, IEnumerable<tOut>>();
+            }
+            return successes.ToSuccessResult<tError, IEnumerable<tOut>>();
+        }
+
+        public static Result<tError, IEnumerable<tOut>> Sequence<tError, tOut>(this IEnumerable<Result<tError, tOut>> results)
+        {
+            return results.Traverse(x => x);
+        }
+
     }
 
 }
