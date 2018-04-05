@@ -4,7 +4,51 @@ title: Einführung in PureScript
 date: 10. April 2018
 ---
 
-# Features
+# Einleitung
+
+##
+![[www.purescript.org](http://www.purescript.org/)](../images/logo.svg)
+
+- funktionale Programmiersprache
+- kompiliert in recht leserliches Javascript
+- einfaches JavaScript FFI
+- ausdruckstarkes Typensystem
+
+::: notes
+- von Haskell inspiriert (aber nicht lazy)
+- nach Elm / Fable / Typescript
+- oder um reines FP zu lernen
+:::
+
+
+# Syntax und Features
+
+## Ausdrücke/Werte
+- (fast) alles ist ein **Ausdruck**
+- ein *Ausdruck* hat einen **Wert** und einen **Typen** 
+- Daten/Werte sind *nicht-veränderbar*
+
+---
+
+### Beispiele
+
+```haskell
+str :: String
+str = "Hallo Magdeburg"
+
+zahl :: Number
+zahl = 0.99
+
+ganzZahlen :: Array Int
+ganzZahlen = [ 1, 2, 3, 4, 5 ]
+```
+
+::: notes
+- Typ und Wertwelt sind getrennt
+- nach dem Kompilieren gibt es keine Typen mehr
+- Signaturen eigentlich nicht benötigt
+- Funktionen sind auch nur Werte mit Typ
+:::
 
 ## Funktionen
 
@@ -13,23 +57,36 @@ Funktionen in **PureScript** sind *rein* und *total*
 $$f : Domain \rightarrow \text{Co-Domain}$$
 
 ::: notes
-für partielle Funktionen siehe [hier](https://github.com/purescript/documentation/blob/master/guides/The-Partial-type-class.md)
+- für jede Eingabe liefert die Funktion genau eine Ausgabe
+- keine Seiteneffekte
+- reine Funktionen kann man "memoizen"
+- total heißt: PureScript zwingt dazu alle Fälle zu Bedenken - soll Laufzeitfehler vermeiden
+- für partielle Funktionen siehe [hier](https://github.com/purescript/documentation/blob/master/guides/The-Partial-type-class.md)
 :::
 
 ---
 
 ### Beispiel
+
 ```haskell
 fizzBuzzNumber :: Int -> String
-fizzBuzzNumber n =
+fizzBuzzNumber = \ n ->
   case Tuple (n `mod` 3 == 0) (n `mod` 5 == 0) of
     Tuple true true  -> "FizzBuzz"
     Tuple true false -> "Fizz"
     Tuple false true -> "Buzz"
     _                -> show n
+
+-- oder
+fizzBuzzNumber n =
+  case Tuple ...
 ```
 
 ::: notes
+- Funktion ist auch nur ein Wert
+- annonyme Funktionen mit `\ x -> ...`
+- Pattern matching mit `case`
+- Kein eingebauter Tupel-Typ!
 - wollen FizzBuzz für ein Array in Range
 :::
 
@@ -39,22 +96,41 @@ fizzBuzzNumber n =
 fizzBuzzNumbers :: Int -> Int -> Array String
 fizzBuzzNumbers from to =
   map fizzBuzzNumber (range from to)
+
+-- oder
+fizzBuzzNumbers from to =
+  fizzBuzzNumber <$> range from to
 ```
 
 ::: notes
-suche nach [intercalate](https://pursuit.purescript.org/packages/purescript-foldable-traversable/3.4.0/docs/Data.Foldable#v:intercalate)
-über Pursuit vorführen
+fehlt noch die String zusammenzuhängen und auszugeben
 :::
 
 ---
 
 ```haskell
-log (intercalate "\n" (fizzBuzzNumbers 1 30))
+fizzBuzzNumbers :: Int -> Int -> Array String
+fizzBuzzNumbers from to =
+  map fizzBuzzNumber (range from to)
+
+...
+
+  log (joinWith "\n" (fizzBuzzNumbers 1 30))
 ```
+
+::: notes
+- suche nach [joinWith](https://pursuit.purescript.org/packages/purescript-strings/3.5.0/docs/Data.String#v:joinWith)
+- über Pursuit vorführen
+:::
+
 
 ## Algebraische Datentypen
 
 **Produkt-** / **Summen**-Datentypen
+
+::: notes
+- neben Records der Weg um eigene Datentypen zu definieren
+:::
 
 ---
 
@@ -72,13 +148,21 @@ first (Tupel a _) = a
 
 ---
 
-#### Warum *Produkt*?
+### Warum *Produkt*?
 
 Wieviele mögliche Werte hat der Typ
 
 ```haskell
 data Kombination = MkKomb Bool Char
 ```
+
+::: incremental
+- `MkKomb false 'a'`
+- `MkKomb false 'b'`
+- ...
+- `MkKomb true 'a'`
+- ...
+:::
 
 ---
 
@@ -99,7 +183,7 @@ withDefault _   (Ok  v) = v
 
 ---
 
-#### Warum *Summe*?
+### Warum *Summe*?
 
 Wieviele mögliche Werte hat der Typ
 
@@ -107,12 +191,110 @@ Wieviele mögliche Werte hat der Typ
 data Alternative = Entweder Bool | Oder Char
 ```
 
+::: incremental
+- `Entweder false`
+- `Entweder true`
+- `Oder 'a'`
+- `Oder 'b'`
+- ...
+:::
+
+## *Algebraisch*?
+*Produkt*/*Summen* kann man mischen
+
+```haskell
+data Algebraisch a = Entweder a Bool | Oder String
+```
 
 ## Records
-Product-Types mit Labels
+*Produkt-Typen* mit *Labels*
+
+```haskell
+type Person =
+    { name    :: String 
+    , caAlter :: Int
+    }
+
+
+carsten :: Person
+carsten = { name: "Carsten", caAlter: 30 }
+
+
+sagHallo :: Person -> String
+sagHallo { name: n, caAlter: a } =
+    if a <= 30 then "Hallo " <> n else "Guten Tag " <> n
+```
+
+---
+
+gewohnter Syntax geht auch
+
+```haskell
+sagHallo :: Person -> String
+sagHallo p =
+    if p.caAlter <= 30 then 
+      "Hallo " <> p.name 
+    else 
+      "Guten Tag " <> p.name
+```
 
 ## Row-Polymorphism
-richtig flexible Records
+Records sind eigentlich
+
+```haskell
+data Record :: # Type -> Type
+```
+
+([siehe Prim](https://pursuit.purescript.org/builtins/docs/Prim))
+
+---
+
+Funktioniert mit jedem Record, der mindestens ein Feld `name` vom Typ `String` hat
+
+```haskell
+hallo :: forall r . { name :: String | r } -> String
+hallo rec = "Hallo " <> rec.name
+```
+
+## (native) Effekte
+Seiteneffekte sind in *PureScript* explizit über das Typsystem (Monaden)
+
+```haskell
+main :: forall e. Eff (console :: CONSOLE | e) Unit
+main = log "Hallo Welt"
+```
+
+```haskell
+data Eff :: # Control.Monad.Eff.Effect -> Type -> Type
+```
+
+::: notes
+- gleiches Prinzip wie bei Records
+- nur in `main` werden Effekte "ausgelöst"
+- `Eff` ist eine Monade
+:::
+
+---
+
+Effekte können "verzahnt" werden
+
+```haskell
+ausgeben :: forall e . Int -> Eff (console :: CONSOLE | e) Unit
+ausgeben n = log ("-> " <> show n)
+
+wuerfel :: forall e . Eff (random :: RANDOM | e) Int
+wuerfel = randomInt 1 6
+
+wuerfeln :: forall e . Eff ( random :: RANDOM
+                           , console :: CONSOLE | e) Unit
+wuerfeln = do
+  n <- wuerfel
+  ausgeben n
+```
+
+::: notes
+`Eff` wird in PS0.12 wohl ähnlich wie Haskell `IO` werden (ohne row-Polymorphismus)
+:::
 
 ## Typklassen
 unbedingt JS zeigen
@@ -137,9 +319,6 @@ useIt :: (forall s . Show s => s -> String) -> String
 useIt toStr = toStr 42 <> " and " <> toStr true
 ```
 
-## Effects
-Seiteneffekte sind wirklich explizit
-
 ## Interop
 zu Javascript und zurück recht einfach
 
@@ -153,6 +332,14 @@ zu Javascript und zurück recht einfach
 
 ## Halogen
 Komponenten mit _interessanten_ Typen
+
+# Resourcen
+
+## 
+- [Homepage - www.purescript.org](http://www.purescript.org/)
+- [Dokumentation - github.com/purescript/documentation](https://github.com/purescript/documentation)
+- [PureScript by Example (Buch) - leanpub.com/purescript/read](https://leanpub.com/purescript/read)
+- [Pursuit - pursuit.purescript.org](https://pursuit.purescript.org/)
 
 # Fragen?
 

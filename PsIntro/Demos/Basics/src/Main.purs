@@ -4,6 +4,7 @@ import Prelude
 
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Console (CONSOLE, log)
+import Control.Monad.Eff.Random (RANDOM, randomInt)
 import Data.Array (intercalate, range)
 import Data.Tuple (Tuple(..))
 
@@ -19,7 +20,7 @@ fizzBuzzNumber n =
 
 fizzBuzzNumbers :: Int -> Int -> Array String
 fizzBuzzNumbers from to =
-  map fizzBuzzNumber (range from to)
+  fizzBuzzNumber <$> range from to
   
 
 main :: forall e. Eff (console :: CONSOLE | e) Unit
@@ -32,10 +33,21 @@ data Result err res
   | Ok res
 
 
+ausgeben :: forall e . Int -> Eff (console :: CONSOLE | e) Unit
+ausgeben n = log ("-> " <> show n)
+
+wuerfel :: forall e . Eff (random :: RANDOM | e) Int
+wuerfel = randomInt 1 6
+
+wuerfeln :: forall e . Eff (random :: RANDOM, console :: CONSOLE | e) Unit
+wuerfeln = do
+  n <- wuerfel
+  ausgeben n
+
+
 withDefault :: ∀ err res . res -> Result err res -> res
 withDefault def (Err _) = def
 withDefault _   (Ok  v) = v
-
 
 -- notWorking :: forall s . Show s => (s -> String) -> String
 -- notWorking toStr = toStr 42 <> " and " <> toStr true
