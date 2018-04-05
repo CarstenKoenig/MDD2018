@@ -54,3 +54,7 @@ withDefault _   (Ok  v) = v
 
 useIt :: (forall s . Show s => s -> String) -> String
 useIt toStr = toStr 42 <> " and " <> toStr true
+
+
+plusS :: forall a. Show a => Semiring a => a -> a -> String
+plusS a b = show (a + b)

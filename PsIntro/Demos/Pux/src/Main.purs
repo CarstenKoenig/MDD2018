@@ -16,12 +16,12 @@ import Pux.Renderer.React (renderToDOM)
 import Text.Smolder.HTML (button, div, p, span, h1)
 import Text.Smolder.Markup (text, (#!))
 
-data Event 
-  = Reset 
+data Event
+  = Reset
   | Mehr
   | Wurf Int
 
-type State = 
+type State =
   { gameOver :: Boolean
   , wuerfe   :: Array Int
   }
@@ -32,8 +32,9 @@ initial = { gameOver: false
           , wuerfe: []
           }
 
+
 punkte :: State -> Int
-punkte = sum <<< _.wuerfe          
+punkte = sum <<< _.wuerfe
 
 
 addWurf :: Int -> State -> State
@@ -43,6 +44,7 @@ addWurf n state =
   else
     checkGameOver $ state { wuerfe = state.wuerfe <> [n] }
 
+
 checkGameOver :: State -> State
 checkGameOver state =
   if punkte state >= 21 then
@@ -50,7 +52,9 @@ checkGameOver state =
   else
     state
 
+
 type AppEffects = ( random :: RANDOM )
+
 
 -- | Start and render the app
 main :: Eff (CoreEffects AppEffects) Unit
@@ -67,21 +71,21 @@ main = do
 
 -- | Return a new state (and effects) from each event
 update :: Event -> State -> EffModel State Event AppEffects
-update Reset curState = 
+update Reset curState =
   { state: initial
-  , effects: [] 
+  , effects: []
   }
-update (Wurf n) curState = 
+update (Wurf n) curState =
   { state: addWurf n curState
-  , effects: [] 
+  , effects: []
   }
-update Mehr curState = 
+update Mehr curState =
   { state: curState
-  , effects: 
+  , effects:
     [ do
       w <- Wurf <$> liftEff (randomInt 1 6)
       pure $ Just w
-    ] 
+    ]
   }
 
 
@@ -89,7 +93,7 @@ update Mehr curState =
 view :: State -> HTML Event
 view state = do
   h1 $ text "Black-Dice"
-  div do
+  div $ do
     viewWuerfe
     viewPunkte
     span $ do
@@ -106,4 +110,4 @@ view state = do
         p $ text ("GAME OVER - " <> show (punkte state))
       else
         p $ text ("Punkte: " <> show (punkte state))
-        
+

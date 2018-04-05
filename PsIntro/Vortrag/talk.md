@@ -297,10 +297,111 @@ wuerfeln = do
 :::
 
 ## Typklassen
-unbedingt JS zeigen
+
+```haskell
+app :: forall a b . (a -> b) -> a -> b
+app f a = f a
+
+plusS :: Int -> Int -> String
+plusS a b = show (a + b)
+```
+
+::: notes
+- bisher nur entweder alle möglichen Typen
+- oder sehr konrete Typen
+- `show` und `(+)` kann doch aber eine Teilmenge aller Typen definiert werden
+:::
+
+---
+
+**Typklassen** *schränken* Datentypen ein um in der Klasse
+definierte Funktionen/Operatoren verfügbar zu machen.
+
+```haskell
+plusS :: forall a. Show a => Semiring a => a -> a -> String
+plusS a b = show (a + b)
+```
+
+---
+
+### Typklassen mit mehreren Parametern
+
+```haskell
+class (Monad m) <= MonadState s m | m -> s where
+```
+
+::: notes
+- Monad ist eine Superklasse von MonadState (jeder MS muss M sein)
+- | m -> s ist eine funktionale Abhängigkeit - der Typ der Monade muss den Zustand S eindeutig bestimmen
+:::
+
+
+## Kinds
+
+```haskell
+-- value
+a = 5
+
+-- type
+a :: Int
+
+-- "type" of type?
+Int :: Type
+```
+
+---
 
 ## Higher-Kinded-Types
-nicht unbedingt "freundlich" ;)
+
+> "Funktion" zwischen Typen
+
+```haskell
+Int                          :: Type
+
+Maybe Int                    :: Type
+
+Maybe                        :: Type -> Type
+
+List                         :: Type -> Type
+
+data Fix f = Fix (f (Fix f)) :: (* -> *) -> *
+```
+
+---
+
+können Muster wie *Funktoren*, *Monaden*, ... in der Sprache ausdrücken!
+
+```haskell
+class Functor f where
+  map :: forall a b. (a -> b) -> f a -> f b
+
+-- kind:
+f :: Type -> Type
+
+```
+
+---
+
+[**free monads**](https://pursuit.purescript.org/packages/purescript-free/4.2.0/docs/Control.Monad.Free)
+oder [**rekursion schemes**](https://pursuit.purescript.org/packages/purescript-matryoshka/0.3.0/docs/Matryoshka.Fold#v:cata)
+
+```haskell
+data Fix f = Fix (f (Fix f))
+
+cata :: forall f a . Functor f => (f a -> a) -> Fix f -> a
+cata alg (Fix ff) = alg (map (cata alg) ff)
+
+data ListF el a = Nil | Cons el a
+derive instance listFunctor :: Functor (ListF el)
+
+type List el = Fix (ListF el)
+
+mySum :: List Int -> Int
+mySum = cata $ case _ of
+    Nil          -> 0
+    (Cons n acc) -> n + acc
+```
+
 
 ## Higher-Ranked-Types
 hier gibt es ein `toStr` für ein festes `s`
