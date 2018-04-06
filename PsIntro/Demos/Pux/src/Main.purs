@@ -26,15 +26,12 @@ data Event
 
 
 type State =
-  { gameOver :: Boolean
-  , wuerfe   :: Array Int
+  { wuerfe   :: Array Int
   }
 
 
 initial :: State
-initial = { gameOver: false
-          , wuerfe: []
-          }
+initial = { wuerfe: [] }
 
 
 punkte :: State -> Int
@@ -43,18 +40,25 @@ punkte = sum <<< _.wuerfe
 
 addWurf :: Int -> State -> State
 addWurf n state =
-  if state.gameOver then
+  if isGameOver state then
     state
   else
-    checkGameOver $ state { wuerfe = state.wuerfe <> [n] }
+    state { wuerfe = state.wuerfe <> [n] }
 
 
-checkGameOver :: State -> State
-checkGameOver state =
-  if punkte state >= 21 then
-    state { gameOver = true }
-  else
-    state
+isGameOver :: State -> Boolean
+isGameOver state =
+  punkte state >= 21
+
+
+isGameLost :: State -> Boolean
+isGameLost state =
+  punkte state > 21
+
+
+isBlackDice :: State -> Boolean
+isBlackDice state =
+  punkte state == 21
 
 
 type AppEffects = ( random :: RANDOM, notify :: NOTIFY )
@@ -75,32 +79,36 @@ main = do
 
 -- | Return a new state (and effects) from each event
 update :: Event -> State -> EffModel State Event AppEffects
-update Mehr curState =
-  { state: curState
-  , effects:
-    [ do
-      w <- Wurf <$> liftEff (randomInt 1 6)
-      pure $ Just w
-    ]
-  }
-update (Wurf n) curState =
-  let state' = addWurf n curState 
-  in
-    { state: state'
-    , effects: 
-      [
-        if state'.gameOver then 
-          liftEff $ do
-            Notify.show "GAME OVER"
-            pure Nothing
-        else
-          pure Nothing
+update Mehr curState
+  | not (isGameOver curState) =
+    { state: curState
+    , effects:
+      [ do
+        w <- Wurf <$> liftEff (randomInt 1 6)
+        pure $ Just w
       ]
     }
-update Reset curState =
-  { state: initial
-  , effects: []
-  }
+  | otherwise = 
+    { state: curState, effects: [] }
+update (Wurf n) curState 
+  | not (isGameOver curState) =
+    let state' = addWurf n curState 
+    in
+      { state: state'
+      , effects: 
+        [
+          if isGameOver state' then 
+            liftEff $ do
+              Notify.show "GAME OVER"
+              pure Nothing
+          else
+            pure Nothing
+        ]
+      }
+  | otherwise = 
+    { state: curState, effects: [] }
+update Reset _ =
+  { state: initial, effects: [] }
 
 
 -- | Return markup from the state
@@ -120,8 +128,10 @@ view state = do
       else
         p $ text (joinWith ", " $ show <$> state.wuerfe)
     viewPunkte =
-      if state.gameOver then
+      if isGameLost state then
         p $ text ("GAME OVER - " <> show (punkte state))
+      else if isBlackDice state then
+        p $ text "BLACK DICE!!!"
       else
         p $ text ("Punkte: " <> show (punkte state))
 
