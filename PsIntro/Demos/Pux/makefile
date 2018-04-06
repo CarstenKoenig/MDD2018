@@ -1,4 +1,4 @@
-dist/bundle.js: src/Main.purs
+dist/bundle.js: src/Main.purs src/Notify.purs src/Notify.js
 	bower install
 	pulp build --to dist/bundle.js
 

@@ -413,6 +413,7 @@ notWorking toStr = toStr 42 <> " and " <> toStr true
 ```
 
 ---
+
 hier gibt es für jedes `s` ein eigenes `toStr` 
 
 ```haskell
@@ -420,8 +421,45 @@ useIt :: (forall s . Show s => s -> String) -> String
 useIt toStr = toStr 42 <> " and " <> toStr true
 ```
 
-## Interop
-zu Javascript und zurück recht einfach
+## JS FFI
+
+*PureScript* Module `Rechnen.purs`
+
+```haskell
+foreign import addition :: Number -> Number -> Number
+```
+
+mit zugehöriger *JavaScript* Datei `Rechnen.js`
+
+```js
+exports.addition = function(x) {
+  return function (y) {
+    return x + y;
+  };
+};
+```
+
+---
+
+mit Effekten
+
+```haskell
+module Notify where
+
+foreign import data NOTIFY :: Effect
+foreign import show :: forall eff . 
+    String -> Eff ( notify :: NOTIFY | eff ) Unit
+```
+
+```js
+// Notify.js
+exports.show = function (text) {
+    // soll ein Effekt werden
+    return function () {
+        ...
+    }
+}
+```
 
 # UI-Frameworks
 

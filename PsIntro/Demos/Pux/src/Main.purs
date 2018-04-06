@@ -15,6 +15,8 @@ import Pux.DOM.HTML (HTML)
 import Pux.Renderer.React (renderToDOM)
 import Text.Smolder.HTML (button, div, p, span, h1)
 import Text.Smolder.Markup (text, (#!))
+import Notify (NOTIFY)
+import Notify as Notify
 
 data Event
   = Reset
@@ -53,7 +55,7 @@ checkGameOver state =
     state
 
 
-type AppEffects = ( random :: RANDOM )
+type AppEffects = ( random :: RANDOM, notify :: NOTIFY )
 
 
 -- | Start and render the app
@@ -76,9 +78,19 @@ update Reset curState =
   , effects: []
   }
 update (Wurf n) curState =
-  { state: addWurf n curState
-  , effects: []
-  }
+  let state' = addWurf n curState 
+  in
+    { state: state'
+    , effects: 
+      [
+        if state'.gameOver then 
+          liftEff $ do
+            Notify.show "GAME OVER"
+            pure Nothing
+        else
+          pure Nothing
+      ]
+    }
 update Mehr curState =
   { state: curState
   , effects:
