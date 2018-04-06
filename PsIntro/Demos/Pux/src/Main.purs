@@ -18,10 +18,12 @@ import Text.Smolder.Markup (text, (#!))
 import Notify (NOTIFY)
 import Notify as Notify
 
+
 data Event
   = Reset
   | Mehr
   | Wurf Int
+
 
 type State =
   { gameOver :: Boolean
@@ -73,9 +75,13 @@ main = do
 
 -- | Return a new state (and effects) from each event
 update :: Event -> State -> EffModel State Event AppEffects
-update Reset curState =
-  { state: initial
-  , effects: []
+update Mehr curState =
+  { state: curState
+  , effects:
+    [ do
+      w <- Wurf <$> liftEff (randomInt 1 6)
+      pure $ Just w
+    ]
   }
 update (Wurf n) curState =
   let state' = addWurf n curState 
@@ -91,13 +97,9 @@ update (Wurf n) curState =
           pure Nothing
       ]
     }
-update Mehr curState =
-  { state: curState
-  , effects:
-    [ do
-      w <- Wurf <$> liftEff (randomInt 1 6)
-      pure $ Just w
-    ]
+update Reset curState =
+  { state: initial
+  , effects: []
   }
 
 

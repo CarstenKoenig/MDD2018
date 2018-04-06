@@ -461,16 +461,141 @@ exports.show = function (text) {
 }
 ```
 
-# UI-Frameworks
+# UI mit Pux
 
-## 
-![source [Twitter](https://twitter.com/paf31/status/981203006979846145)](../images/UiAuswahl.png){height=550px}
+## Elm Architectur
 
+- **Zustand** wird als *HTML* dargestellt
+- Ereignisse (Click,...) erzeugen **Nachrichten**
+- aus dem aktuellen *Zustand* und einer *Nachricht* wird ein neuer *Zustand* generiert
+- ...
 
-## Pux
+---
 
-## Halogen
-Komponenten mit _interessanten_ Typen
+## Elm Architectur
+
+```haskell
+
+type State = { .. }
+
+data Event = ...
+
+view :: State -> HTML Event
+
+update :: Event -> State -> EffModel State Event AppEffects
+
+```
+
+---
+
+## Seiteneffekte
+
+- in **Pux** kann die `update` Funktion Seiteneffekte auslösen
+- externe *Signale* können *Events* auslösen
+
+```haskell
+main = do
+  app <- start
+    { initialState: initial
+    , view
+    , foldp: update
+    , inputs: [] -- <- Signale hier bitte
+    }
+
+```
+
+::: notes
+- das optionale Eregnis eines Effekts wird wieder als Nachricht an `update` übergeben
+- `foldp` = Fold-"past"(?)
+:::
+
+## Demo
+
+---
+
+### Zustand
+
+```haskell
+type State =
+  { gameOver :: Boolean
+  , wuerfe   :: Array Int
+  }
+```
+
+---
+
+### Ereignisse
+
+```haskell
+data Event
+  = Reset
+  | Mehr
+  | Wurf Int
+```
+
+---
+
+### View
+
+```haskell
+view :: State -> HTML Event
+view state = do
+  h1 $ text "Black-Dice"
+  div $ do
+    viewWuerfe
+    viewPunkte
+    span $ do
+      button #! onClick (const Mehr) $ text "mehr"
+      button #! onClick (const Reset) $ text "Reset"
+```
+
+---
+
+### Update
+
+noch ein Wurf
+
+```haskell
+update :: Event -> State -> EffModel State Event AppEffects
+update Mehr curState =
+  { state: curState
+  , effects:
+    [ do
+      w <- Wurf <$> liftEff (randomInt 1 6)
+      pure $ Just w
+    ]
+  }
+```
+
+---
+
+### Update
+
+Zufallsergebnis eingetroffen
+
+```haskell
+update :: Event -> State -> EffModel State Event AppEffects
+update (Wurf n) curState =
+  let state' = addWurf n curState 
+  in
+    { state: state'
+    , effects: []
+    }
+```
+
+---
+
+### Update
+
+Reset gedrückt
+
+```haskell
+update :: Event -> State -> EffModel State Event AppEffects
+update Reset curState =
+  { state: initial
+  , effects: []
+  }
+```
 
 # Resourcen
 
@@ -481,39 +606,3 @@ Komponenten mit _interessanten_ Typen
 - [Pursuit - pursuit.purescript.org](https://pursuit.purescript.org/)
 
 # Fragen?
-
-# Foo
-
-## Code
-```haskell
-class Functor f where
-    fmap :: (a -> b) -> f a -> f b
-```
-
-::: notes
-
-This is my note.
-
-- It can contain Markdown
-- like this list
-
-:::
-
-# Bar
-
-## 
-* test
-* test
-
-***
-
-##
-
-:::::::::::::: {.columns}
-::: {.column width="40%"}
-contents... col 1
-:::
-::: {.column width="60%"}
-contents...column 2
-:::
-::::::::::::::
