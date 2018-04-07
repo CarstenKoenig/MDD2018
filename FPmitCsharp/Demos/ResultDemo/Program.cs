@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using ResultDemo.Type;
 
+using Name = System.String;
+
 namespace ResultDemo
 {
   class Program
@@ -145,6 +147,11 @@ namespace ResultDemo
               .Map(col => resultSelector(src, col)));
     }
 
+    public static Func<tIn2, tOut> PartialApply<tIn1, tIn2, tOut>(this Func<tIn1, tIn2, tOut> f, tIn1 x1)
+    {
+      return x2 => f(x1, x2);
+    }
+
     public static Func<tIn1, Func<tIn2, tOut>> Curry<tIn1, tIn2, tOut>(this Func<tIn1, tIn2, tOut> f)
     {
       return x1 => x2 => f(x1, x2);
@@ -180,7 +187,6 @@ namespace ResultDemo
     {
       return results.Traverse(x => x);
     }
-
   }
 
 }
