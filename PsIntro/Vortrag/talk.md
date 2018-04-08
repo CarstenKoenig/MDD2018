@@ -356,15 +356,16 @@ Int :: Type
 > "Funktion" zwischen Typen
 
 ```haskell
-Int                          :: Type
+Int       :: Type
 
-Maybe Int                    :: Type
+Maybe Int :: Type
 
-Maybe                        :: Type -> Type
+Maybe     :: Type -> Type
 
-List                         :: Type -> Type
+List      :: Type -> Type
 
-data Fix f = Fix (f (Fix f)) :: (* -> *) -> *
+Fix       :: (Type -> Type) -> Type
+data Fix f = Fix (f (Fix f)) 
 ```
 
 ---
