@@ -1,61 +1,38 @@
-module Main where
+module Game where
 
 import Prelude hiding (div)
 
-import Control.Monad.Eff (Eff)
-import Control.Monad.Eff.Class (liftEff)
-import Control.Monad.Eff.Random (RANDOM, randomInt)
-import Data.Array (null)
 import Data.Foldable (sum)
-import Data.Maybe (Maybe(..))
-import Data.String (joinWith)
-import Pux (CoreEffects, EffModel, start)
-import Pux.DOM.Events (onClick)
-import Pux.DOM.HTML (HTML)
-import Pux.Renderer.React (renderToDOM)
-import Text.Smolder.HTML (button, div, p, span, h1)
-import Text.Smolder.Markup (text, (#!))
-import Notify (NOTIFY)
-import Notify as Notify
+
+type Score = Int
+
+type State r =
+  { scores :: Array Score
+  | r }
 
 
-data Event
-  = Reset
-  | Mehr
-  | Wurf Int
+totalScore :: forall r . State r -> Score
+totalScore = sum <<< _.scores
 
 
-type State =
-  { wuerfe   :: Array Int
-  }
-
-
-initial :: State
-initial = { wuerfe: [] }
-
-
-punkte :: State -> Int
-punkte = sum <<< _.wuerfe
-
-
-addWurf :: Int -> State -> State
-addWurf n state =
+addDie :: forall r . Score -> State r -> State r
+addDie n state =
   if isGameOver state then
     state
   else
-    state { wuerfe = state.wuerfe <> [n] }
+    state { scores = state.scores <> [n] }
 
 
-isGameOver :: State -> Boolean
+isGameOver :: forall r . State r -> Boolean
 isGameOver state =
-  punkte state >= 21
+  totalScore state >= 21
 
 
-isGameLost :: State -> Boolean
+isGameLost :: forall r . State r -> Boolean
 isGameLost state =
-  punkte state > 21
+  totalScore state > 21
 
 
-isBlackDice :: State -> Boolean
+isBlackDice :: forall r . State r -> Boolean
 isBlackDice state =
-  punkte state == 21
+  totalScore state == 21

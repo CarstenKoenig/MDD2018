@@ -11,8 +11,8 @@ namespace ResultDemo
     static void Main()
     {
       Result<string, int> ergebnis =
-          from zahl1 in ZahlErfragen().TryParseWith<int>(int.TryParse)
-          from zahl2 in ZahlErfragen().TryParseWith<int>(int.TryParse)
+          from zahl1 in Console.ReadLine().TryParseWith<int>(int.TryParse)
+          from zahl2 in Console.ReadLine().TryParseWith<int>(int.TryParse)
           select zahl1 + zahl2;
 
       Console.WriteLine(ergebnis.Match(
@@ -43,6 +43,13 @@ namespace ResultDemo
           fromSuccess: suc => ToSuccessResult<tErrorOut, tResultOut>(mapResult(suc)));
     }
 
+    public static Func<Result<tError, tIn>, Result<tError, tOut>> FMap<tError, tIn, tOut>(Func<tIn, tOut> map)
+    {
+      return result => result.Match(
+        ToFailedResult<tError, tOut>,
+        inp => map(inp).ToSuccessResult<tError, tOut>());
+    }
+
     public static Result<tError, tOut> Map<tError, tIn, tOut>(this Result<tError, tIn> result, Func<tIn, tOut> map)
     {
       return result.BiMap(x => x, map);
@@ -54,6 +61,15 @@ namespace ResultDemo
     }
 
 
+    public static Func<Result<tError, tIn>, Result<tError, tOut>> Apply<tError, tIn, tOut>(this Result<tError, Func<tIn, tOut>> resF)
+    {
+      return resX => resF.Match(
+          fromFail: ToFailedResult<tError, tOut>,
+          fromSuccess: f => resX.Match(
+              fromFail: ToFailedResult<tError, tOut>,
+              fromSuccess: x => ToSuccessResult<tError, tOut>(f(x))));
+    }
+
     public static Result<tError, tOut> Apply<tError, tIn, tOut>(this Result<tError, Func<tIn, tOut>> resF, Result<tError, tIn> resX)
     {
       return resF.Match(
@@ -61,6 +77,11 @@ namespace ResultDemo
           fromSuccess: f => resX.Match(
               fromFail: ToFailedResult<tError, tOut>,
               fromSuccess: x => ToSuccessResult<tError, tOut>(f(x))));
+    }
+
+    public static Result<tError, tResult> Pure<tError, tResult>(this tResult value)
+    {
+      return value.ToSuccessResult<tError, tResult>();
     }
 
     public static Result<tError, tOut> LiftA2<tError, tIn1, tIn2, tOut>(Func<tIn1, tIn2, tOut> f, Result<tError, tIn1> res1, Result<tError, tIn2> res2)

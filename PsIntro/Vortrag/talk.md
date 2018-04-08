@@ -516,10 +516,8 @@ main = do
 ### Zustand
 
 ```haskell
-type State =
-  { gameOver :: Boolean
-  , wuerfe   :: Array Int
-  }
+type State = 
+  { scores :: Array Game.Score }
 ```
 
 ---
@@ -529,8 +527,8 @@ type State =
 ```haskell
 data Event
   = Reset
-  | Mehr
-  | Wurf Int
+  | ThrowDice
+  | AddDie Game.Score
 ```
 
 ---
@@ -542,12 +540,14 @@ view :: State -> HTML Event
 view state = do
   h1 $ text "Black-Dice"
   div $ do
-    viewWuerfe
-    viewPunkte
+    viewScores
+    viewTotal
     span $ do
-      button #! onClick (const Mehr) $ text "mehr"
-      button #! onClick (const Reset) $ text "Reset"
-```
+      button #! onClick (const ThrowDice) $ text "throw"
+      button #! onClick (const Reset) $ text "reset"
+  where
+    ...
+ ```
 
 ---
 
@@ -557,14 +557,17 @@ noch ein Wurf
 
 ```haskell
 update :: Event -> State -> EffModel State Event AppEffects
-update Mehr curState =
-  { state: curState
-  , effects:
-    [ do
-      w <- Wurf <$> liftEff (randomInt 1 6)
-      pure $ Just w
-    ]
-  }
+update ThrowDice curState
+  | not (Game.isGameOver curState) =
+    { state: curState
+    , effects:
+      [ do
+        score <- liftEff (randomInt 1 6)
+        pure $ Just $ AddDie score
+      ]
+    }
+  | otherwise = 
+    { state: curState, effects: [] }
 ```
 
 ---
@@ -575,13 +578,20 @@ Zufallsergebnis eingetroffen
 
 ```haskell
 update :: Event -> State -> EffModel State Event AppEffects
-update (Wurf n) curState =
-  let state' = addWurf n curState 
-  in
-    { state: state'
-    , effects: []
-    }
-```
+update (AddDie score) curState 
+  | not (Game.isGameOver curState) =
+    let state' = Game.addDie score curState 
+    in
+      { state: state'
+      , effects: 
+        [ do
+          when (Game.isGameOver state') $
+            liftEff $ Notify.show "game ended"
+          pure Nothing
+        ]
+      }
+  | otherwise = { state: curState, effects: [] }
+ ```
 
 ---
 
@@ -591,10 +601,8 @@ Reset gedrückt
 
 ```haskell
 update :: Event -> State -> EffModel State Event AppEffects
-update Reset curState =
-  { state: initial
-  , effects: []
-  }
+update Reset _ =
+  { state: initialState, effects: [] }
 ```
 
 # Resourcen

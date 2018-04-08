@@ -12,6 +12,20 @@ date: 10. April 2018
 - dafür müssen Funktionen *first class* sein
 :::
 
+---
+
+## in C\#
+
+> **OOP** im Großen
+> <br/>
+> **FP** im Kleinen
+
+::: notes
+- Architektur mit OOP
+- für kleinere Details FP benutzen
+- also: Klassen, Interfaces, ...
+::: 
+
 ## Lambda Kalkül
 
 ![Alonzo Church](../images/Alonzo_Church.jpg)
@@ -26,13 +40,25 @@ date: 10. April 2018
 
 ### Boolsche Werte
 
+$$true := (\lambda \ t \ f \ . \ t)$$
+
+$$false := (\lambda \ t \ f \ . \ f)$$
+
+---
+
+$$if := (\lambda \ b \ t \ f \ . \ b \ t \ f)$$
+
+$$and := (\lambda \ a \ b \ . \ a \ b \ false)$$
+
+---
+
 ```csharp
-true  = (t, f) => t
-false = (t, f) => f
+true  = (t, f)    => t;
+false = (t, f)    => f;
 
-lcIf (b, t, e) = b (t, f)
+lcIf  = (b, t, e) => b (t, e);
 
-and (a, b)     = a (b, false)
+and   = (a, b)    => a (b, false);
 ```
 
 ---
@@ -40,15 +66,16 @@ and (a, b)     = a (b, false)
 ### natürliche Zahlen
 
 ```csharp
-zero     = (s, z) => z
-succ (n) = (s, z) => s (n (s,z))
+zero =      (s, z)   => z;
+one  =      (s, z)   => s (z);
+two  =      (s, z)   => s (s (z));
 
-for (n,i0,next) = n (next, i0)
+succ = n => (s, z)   => s (n (s,z));
 
-plus (a, b)     = a (succ, b)
+iter = (n, next, i0) => n (next, i0);
+
+plus = (a, b)        => a (succ, b);
 ```
-
-## Demo
 
 # Funktionen
 
@@ -62,7 +89,7 @@ f(x) == f(x);
 
 ## keine *Seiteneffekte*
 
-Funktionen sollen keine (*beobachtbaren*) Seiteneffekte bewirken
+Funktionen sollen keine (*beobachtbaren*) Seiteneffekte haben
 
 ## Funktionen
 
@@ -215,9 +242,34 @@ int f (int x)
 
 ---
 
+```csharp
+static int y = 7;
+
+int f (int x)
+{
+    return x + y;
+}
+```
+
+---
+
+```csharp
+static int y = 7;
+
+int f (int x)
+{
+    return x + y;
+}
+```
+
+**nein - hängt davon ab ob sich `y` ändert**
+
+
+---
+
 ### gute Idee?
 
-*Seiteneffekte* vermeiden / an den Rand des Systems
+ja - einfacher zu testen, verstehen, ...
 
 ## currying / partial application
 
@@ -300,6 +352,35 @@ var result = UseConnection (con => QueryData(con, ...));
 ### gute Idee?
 
 ja! - LINQ, Rx sind gute Beispiele
+
+## Komposition
+
+$$ f: A \rightarrow B $$
+$$ g: B \rightarrow C $$
+
+zu neuer Funktion *verknüpft*
+
+$$ g \circ f : A \rightarrow C$$
+$$ a \mapsto g (f(a)) $$
+
+---
+
+### in C\#
+
+```csharp
+public static Func<tA, tC> After<tA, tB, tC>(
+    this Func<tB,tC> g, 
+    Func<tA,tB> f)
+{
+    return a => g(f(a));
+}
+```
+
+---
+
+### gute Idee?
+
+macht in C# keinen Sinn
 
 # Daten und Typen
 
@@ -509,7 +590,7 @@ public abstract class Result<tError, tResult> {
     }
 ```
 
-## Higher-Order Funktionen
+## Try
 
 ```csharp
 public static Result<Exception, tResult> Try<tResult>(
@@ -555,17 +636,26 @@ var zahlResult = eingabe.TryParseWith<int>(int.TryParse);
 
 ## Funktor
 
-**Idee**: 
+**Idee**: mache aus einer Funktion `A` &rarr; `B` eine Funktion `Result<E,A>` &rarr; `Result<E,B>`
 
 ```csharp
 // haben:
-tOut f (tIn input)
+B f (A a)
 
-// und
-Result<tErr, tIn> value;
+// wollen
+Result<tErr, B> f_result(Result<tErr, A> resultA);
+```
 
-// wollen:
-Result<tErr, tOut> f_value;
+---
+
+```csharp
+Func<Result<tError, tIn>, Result<tError, tOut>> 
+    FMap<tError, tIn, tOut> (Func<tIn, tOut> map)
+{
+    return result => result.Match(
+        ToFailedResult<tError, tOut>,
+        inp => map(inp).ToSuccessResult<tError, tOut>());
+}
 ```
 
 ---
@@ -617,14 +707,231 @@ Result<tErrorOut, tResultOut>
 - `Func<tIn, T>`
 
 ## Applikative
-- `Apply`, `liftA2`
+
+mache aus einem `Result`, dass eine Funktion `A` &rarr; `B` zurückgibt eine
+Funktion `Result<E,A>` &rarr; `Result<E,B>`
+
+```csharp
+// haben:
+Result<tErr, Func<A,B>> resultF;
+
+// wollen
+Result<tErr, B> f_result(Result<tErr, A> resultA);
+```
+
+---
+
+```csharp
+Result<tError, tOut> Apply<tError, tIn, tOut>(
+    this Result<tError, Func<tIn, tOut>> resF, 
+    Result<tError, tIn> resX)
+{
+    return resF.Match(
+        fromFail: ToFailedResult<tError, tOut>,
+        fromSuccess: f => resX.Match(
+            fromFail: ToFailedResult<tError, tOut>,
+            fromSuccess: x => 
+                ToSuccessResult<tError, tOut>( f(x) )));
+}
+```
+
+---
+
+## Applikative
+
+**und**: bringe einen Wert in die Datenstruktur:
+
+```csharp
+Result<tError, tResult> Pure<tError, tResult>(tResult value)
+{
+    return value.ToSuccessResult<tError, tResult>();
+}
+```
+
+---
+
+### Funktion mit 2 Argumenten
+
+```csharp
+Result<tError, tOut> LiftA2<tError, tIn1, tIn2, tOut>(
+    Func<tIn1, tIn2, tOut> f, 
+    Result<tError, tIn1> res1,
+    Result<tError, tIn2> res2) 
+{
+    return Curry(f)
+        .ToSuccessResult<tError, Func<tIn1, Func<tIn2, tOut>>>()
+        .Apply(res1)
+        .Apply(res2);
+}
+```
 
 ## Traversable
-- `Traversable` über `IEnumerable`
 
-## Monade und LINQ
-- `Bind` und die *Selects*
-- Beispiel vorstellen
+**Idee:** mache aus einer *Aufzählung* von `Result` Werten ein `Result`, dass
+eine Aufzählung von Werten liefert
+
+```csharp
+// haben
+IEnumerable<Result<tErr, tRes>>
+
+// wollen
+Result<tErr, IEnumerable<tRes>>
+```
+
+---
+
+**Verallgemeinert**
+
+```csharp
+Result<tError, IEnumerable<tOut>> Traverse<tError, tIn, tOut>(
+    this IEnumerable<tIn> inputs, 
+    Func<tIn, Result<tError, tOut>> toResult)
+{
+    var successes = new List<tOut>();
+    var hadError = false;
+    var firstError = default(tError);
+    ...
+
+```
+
+---
+
+```csharp
+    ...
+    foreach (var input in inputs)
+    {
+        toResult(input).Match(
+            err =>
+            {
+                firstError = err;
+                hadError = true;
+                return 0;
+            },
+    ...
+}
+```
+
+---
+
+```csharp
+            ...
+            res =>
+            {
+                successes.Add(res);
+                return 1;
+            });
+        if (hadError)
+            return firstError
+                .ToFailedResult<tError, IEnumerable<tOut>>();
+    } // foreach (var input in inputs)
+    return successes
+        .ToSuccessResult<tError, IEnumerable<tOut>>();
+}
+```
+
+---
+
+damit
+
+```csharp
+Result<tError, IEnumerable<tOut>> Sequence<tError, tOut>(
+    IEnumerable<Result<tError, tOut>> results)
+{
+    return results.Traverse(x => x);
+}
+```
+
+## Monade
+
+**Idee:** verknüpfe ein `Result`, dass ein `A` liefert mit einer Funktion
+die aus einem `A` ein anderes `Result` macht
+
+```csharp
+// haben
+Result<tErr, A> resA;
+
+Result<tErr, B> f(A a);
+
+// wollen
+Result<tErr, B> resB;
+```
+
+---
+
+als Funktion
+
+```csharp
+Result<tError, tOut> Bind<tError, tIn, tOut>(
+    Result<tError, tIn> result, 
+    Func<tIn, Result<tError, tOut>> bind)
+```
+
+---
+
+```csharp
+public static Result<tError, tOut> Bind<tError, tIn, tOut>(
+    this Result<tError, tIn> result, 
+    Func<tIn, Result<tError, tOut>> bind)
+{
+    return result.Match(
+        ToFailedResult<tError, tOut>,
+        fromSuccess: bind);
+}
+```
+
+---
+
+### LINQ
+
+```csharp
+      Result<string, int> ergebnis =
+          from zahl1 in Console
+            .ReadLine()
+            .TryParseWith<int>(int.TryParse)
+          from zahl2 in Console
+            .ReadLine()
+            .TryParseWith<int>(int.TryParse)
+          select zahl1 + zahl2;
+
+      Console.WriteLine(ergebnis.Match(
+          err => $"Konnte \"{err}\" nicht umwandeln",
+          zahl => $"Ergebnis ist {zahl}"));
+```
+
+---
+
+müssen `Select`, und zwei `SelectMany` Varianten implementiern
+
+```csharp 
+public static Result<tError, tOut> 
+    Select<tError, tIn, tOut>(
+        this Result<tError, tIn> result, 
+        Func<tIn, tOut> map) {
+    return result.Map(map);
+}
+
+public static Result<tError, tResult> 
+    SelectMany<tError, tSource, tResult>(
+        this Result<tError, tSource> source, 
+        Func<tSource, Result<tError, tResult>> selector) {
+    return source.Bind(selector);
+}
+```
+
+---
+
+```csharp
+public static Result<tErr, tRes> 
+    SelectMany<tErr, tSource, tCol, tRes>(
+        this Result<tErr, tSrc> source,
+        Func<tSrc, Result<tErr, tCol>> collectionSelector,
+        Func<tSrc, tCol, tRes> resultSelector)
+{
+    return source.Bind(src =>
+        collectionSelector(src)
+            .Map(col => resultSelector(src, col)));
+}
+```
 
 # Fragen ?
 
