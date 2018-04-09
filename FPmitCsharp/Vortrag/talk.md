@@ -4,6 +4,15 @@ title: Funktionale Programmierung in C#
 date: 10. April 2018
 ---
 
+# Agenda
+
+##
+
+- Einführung
+- Funktionen
+- Daten
+- funkktionale Muster
+
 # Was ist FP?
 
 ::: notes
@@ -11,20 +20,6 @@ date: 10. April 2018
 - Arbeiten damit (Verknüpfen, zurückgeben, ...)
 - dafür müssen Funktionen *first class* sein
 :::
-
----
-
-## in C\#
-
-> **OOP** im Großen
-> <br/>
-> **FP** im Kleinen
-
-::: notes
-- Architektur mit OOP
-- für kleinere Details FP benutzen
-- also: Klassen, Interfaces, ...
-::: 
 
 ## Lambda Kalkül
 
@@ -46,17 +41,17 @@ $$false := (\lambda \ t \ f \ . \ f)$$
 
 ---
 
-$$if := (\lambda \ b \ t \ f \ . \ b \ t \ f)$$
-
-$$and := (\lambda \ a \ b \ . \ a \ b \ false)$$
-
----
+### Boolsche Werte
 
 ```csharp
 true  = (t, f)    => t;
 false = (t, f)    => f;
+```
 
-lcIf  = (b, t, e) => b (t, e);
+---
+
+```csharp
+lcIf  = (cond, then, else) => cond (then, else);
 
 and   = (a, b)    => a (b, false);
 ```
@@ -76,16 +71,25 @@ iter = (n, next, i0) => n (next, i0);
 
 plus = (a, b)        => a (succ, b);
 ```
+---
+
+## in C\#
+
+> **OOP** im Großen
+> <br/>
+> **FP** im Kleinen
+
+::: notes
+- Architektur mit OOP
+- für kleinere Details FP benutzen
+- also: Klassen, Interfaces, ...
+::: 
 
 # Funktionen
 
 ## reine Funktionen
 
 eine Funktion sollte zu jeder möglichen Eingabe **genau eine** Ausgabe liefern
-
-```csharp
-f(x) == f(x);
-```
 
 ## keine *Seiteneffekte*
 
@@ -264,12 +268,13 @@ int f (int x)
 
 **nein - hängt davon ab ob sich `y` ändert**
 
+::: notes
+Gute Idee?
 
----
-
-### gute Idee?
-
-ja - einfacher zu testen, verstehen, ...
+- einfach testbar
+- leichter zu verstehen (kein globaler Zustand)
+- weniger Probleme mit paralleler Abarbeitung
+:::
 
 ## currying / partial application
 
@@ -308,11 +313,11 @@ public static Func<tIn1, Func<tIn2, tOut>>
 }
 ```
 
----
-
-### gute Idee?
+::: notes
+gute Idee?
 
 Arbeit mit `Func<...>` in C# sehr lästig - auch weil Typinferenz nur sehr eingeschränkt ist
+:::
 
 ## Funktionen höherer Ordnung
 
@@ -347,11 +352,11 @@ var result = UseConnection (con => QueryData(con, ...));
 
 ```
 
----
-
-### gute Idee?
+::: notes
+gute Idee?
 
 ja! - LINQ, Rx sind gute Beispiele
+:::
 
 ## Komposition
 
@@ -376,11 +381,11 @@ public static Func<tA, tC> After<tA, tB, tC>(
 }
 ```
 
----
-
-### gute Idee?
+::: notes
+gute Idee?
 
 macht in C# keinen Sinn
+:::
 
 # Daten und Typen
 
@@ -426,13 +431,11 @@ public class Person {
     }
 }
 ```
----
-
-### gute Idee?
-
-ja - so weit wie möglich / sinnvoll
 
 ::: notes
+gute Idee?
+
+- ja - so weit wie möglich / sinnvoll
 - irgendwann wird ein sinnvolles Programm Zustand verwalten müssen
 - Beispiel am .net Framework nehmen (String, DateTime, ...)
 :::
@@ -612,6 +615,20 @@ public static Result<Exception, tResult> Try<tResult>(
 ### TryParse Muster
 
 ```csharp
+var eingabe = "33";
+var zahlResult = eingabe.TryParseWith<int>(int.TryParse);
+// = Success(33)
+
+eingabe = "x"
+...
+// = Fehler
+```
+
+---
+
+### TryParse Muster
+
+```csharp
 delegate bool Parser<tOut>(string input, out tOut output);
 
 static Result<tError, tOut> TryParseWith<tError, tOut>(
@@ -625,26 +642,29 @@ static Result<tError, tOut> TryParseWith<tError, tOut>(
 }
 ```
 
----
-
-### Beispiel
-
-```csharp
-var eingabe = "33";
-var zahlResult = eingabe.TryParseWith<int>(int.TryParse);
-```
-
 ## Funktor
 
-**Idee**: mache aus einer Funktion `A` &rarr; `B` eine Funktion `Result<E,A>` &rarr; `Result<E,B>`
-
 ```csharp
-// haben:
-B f (A a)
+double Halbieren(int x) {
+    return x / 2.0;
+}
 
-// wollen
-Result<tErr, B> f_result(Result<tErr, A> resultA);
+var resultH = result.Map(Halbieren);
+// = Fehler falls result = Fehler
+// = Erfolg Hälfte falls result = Erfolg
 ```
+
+---
+
+### Abstrakt: 
+
+mache aus einer Funktion 
+
+$$ A \rightarrow B$$
+
+eine Funktion 
+
+$$ Result<E,A> \rightarrow Result<E,B> $$
 
 ---
 
@@ -677,47 +697,39 @@ static Result<tError, tOut>
 
 ---
 
-## BiFunktor
-
-können auch den Fehler *mappen*
-
-```csharp
-Result<tErrorOut, tResultOut> 
-    BiMap<tErrorIn, tErrorOut, tResultIn, tResultOut> (
-        this Result<tErrorIn, tResultIn> result
-        , Func<tErrorIn, tErrorOut> mapError
-        , Func<tResultIn, tResultOut> mapResult )
-{
-    return result.Match(
-        fromFail: err => 
-            ToFailedResult<tErrorOut, tResultOut>(
-                mapError(err)),
-        fromSuccess: suc => 
-            ToSuccessResult<tErrorOut, tResultOut>(
-                mapResult(suc)));
-}
-```
-
----
-
 ### Andere Funktoren
 
 - `Task<T>`
 - `IEnumerable<T>` (`.Select`)
 - `Func<tIn, T>`
 
+::: notes
+- den Fehler kann man auch mappen ~> Bimap
+- der letze Fall sehr interessant - mit Komposition
+:::
+
 ## Applikative
 
-mache aus einem `Result`, dass eine Funktion `A` &rarr; `B` zurückgibt eine
-Funktion `Result<E,A>` &rarr; `Result<E,B>`
-
 ```csharp
-// haben:
-Result<tErr, Func<A,B>> resultF;
+Result<tErr, Func<A,B>> resF = ...;
+Result<tErr, A> resA = ...;
 
-// wollen
-Result<tErr, B> f_result(Result<tErr, A> resultA);
+resF.Apply(resA);
+// = Fehler falls resF oder resA Fehler
+// = Erfolg  f(a) sonst
 ```
+
+---
+
+### Abstrakt: 
+
+mache aus einer Funktion in einem Result
+
+$$ Result <E, A \rightarrow B > $$
+
+eine Funktion 
+
+$$ Result<E,A> \rightarrow Result<E,B> $$
 
 ---
 
@@ -737,19 +749,6 @@ Result<tError, tOut> Apply<tError, tIn, tOut>(
 
 ---
 
-## Applikative
-
-**und**: bringe einen Wert in die Datenstruktur:
-
-```csharp
-Result<tError, tResult> Pure<tError, tResult>(tResult value)
-{
-    return value.ToSuccessResult<tError, tResult>();
-}
-```
-
----
-
 ### Funktion mit 2 Argumenten
 
 ```csharp
@@ -762,82 +761,6 @@ Result<tError, tOut> LiftA2<tError, tIn1, tIn2, tOut>(
         .ToSuccessResult<tError, Func<tIn1, Func<tIn2, tOut>>>()
         .Apply(res1)
         .Apply(res2);
-}
-```
-
-## Traversable
-
-**Idee:** mache aus einer *Aufzählung* von `Result` Werten ein `Result`, dass
-eine Aufzählung von Werten liefert
-
-```csharp
-// haben
-IEnumerable<Result<tErr, tRes>>
-
-// wollen
-Result<tErr, IEnumerable<tRes>>
-```
-
----
-
-**Verallgemeinert**
-
-```csharp
-Result<tError, IEnumerable<tOut>> Traverse<tError, tIn, tOut>(
-    this IEnumerable<tIn> inputs, 
-    Func<tIn, Result<tError, tOut>> toResult)
-{
-    var successes = new List<tOut>();
-    var hadError = false;
-    var firstError = default(tError);
-    ...
-
-```
-
----
-
-```csharp
-    ...
-    foreach (var input in inputs)
-    {
-        toResult(input).Match(
-            err =>
-            {
-                firstError = err;
-                hadError = true;
-                return 0;
-            },
-    ...
-}
-```
-
----
-
-```csharp
-            ...
-            res =>
-            {
-                successes.Add(res);
-                return 1;
-            });
-        if (hadError)
-            return firstError
-                .ToFailedResult<tError, IEnumerable<tOut>>();
-    } // foreach (var input in inputs)
-    return successes
-        .ToSuccessResult<tError, IEnumerable<tOut>>();
-}
-```
-
----
-
-damit
-
-```csharp
-Result<tError, IEnumerable<tOut>> Sequence<tError, tOut>(
-    IEnumerable<Result<tError, tOut>> results)
-{
-    return results.Traverse(x => x);
 }
 ```
 
@@ -933,11 +856,87 @@ public static Result<tErr, tRes>
 }
 ```
 
+## Traversable
+
+**Idee:** mache aus einer *Aufzählung* von `Result` Werten ein `Result`, dass
+eine Aufzählung von Werten liefert
+
+```csharp
+// haben
+IEnumerable<Result<tErr, tRes>>
+
+// wollen
+Result<tErr, IEnumerable<tRes>>
+```
+
+---
+
+**Verallgemeinert**
+
+```csharp
+Result<tError, IEnumerable<tOut>> Traverse<tError, tIn, tOut>(
+    this IEnumerable<tIn> inputs, 
+    Func<tIn, Result<tError, tOut>> toResult)
+{
+    var successes = new List<tOut>();
+    var hadError = false;
+    var firstError = default(tError);
+    ...
+
+```
+
+---
+
+```csharp
+    ...
+    foreach (var input in inputs)
+    {
+        toResult(input).Match(
+            err =>
+            {
+                firstError = err;
+                hadError = true;
+                return 0;
+            },
+    ...
+}
+```
+
+---
+
+```csharp
+            ...
+            res =>
+            {
+                successes.Add(res);
+                return 1;
+            });
+        if (hadError)
+            return firstError
+                .ToFailedResult<tError, IEnumerable<tOut>>();
+    } // foreach (var input in inputs)
+    return successes
+        .ToSuccessResult<tError, IEnumerable<tOut>>();
+}
+```
+
+---
+
+damit
+
+```csharp
+Result<tError, IEnumerable<tOut>> Sequence<tError, tOut>(
+    IEnumerable<Result<tError, tOut>> results)
+{
+    return results.Traverse(x => x);
+}
+```
+
 # Fragen ?
+
+# Vielen Dank
 
 # Quellen
 
 ## 
 - Bild von Church: [Wikipedia](https://en.wikipedia.org/wiki/File:Alonzo_Church.jpg)
-
-# Vielen Dank
