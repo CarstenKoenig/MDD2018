@@ -15,6 +15,8 @@ namespace ResultDemo
           from zahl2 in Console.ReadLine().TryParseWith<int>(int.TryParse)
           select zahl1 + zahl2;
 
+      var h = ergebnis.Map((int x) => x/2.0);        
+
       Console.WriteLine(ergebnis.Match(
           err => $"Konnte \"{err}\" nicht in eine Zahl umwandeln",
           zahl => $"Ergebnis ist {zahl}"));

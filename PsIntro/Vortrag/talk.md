@@ -4,6 +4,12 @@ title: Einführung in PureScript
 date: 10. April 2018
 ---
 
+## Agenda
+
+- kleiner Überblick
+- Syntax, Typsystem
+- Beispiel / Elm-Architektur
+
 # Einleitung
 
 ##
@@ -248,7 +254,7 @@ data Record :: # Type -> Type
 ([siehe Prim](https://pursuit.purescript.org/builtins/docs/Prim))
 
 ---
-
+  
 Funktioniert mit jedem Record, der mindestens ein Feld `name` vom Typ `String` hat
 
 ```haskell
@@ -615,3 +621,5 @@ update Reset _ =
 - [Pursuit - pursuit.purescript.org](https://pursuit.purescript.org/)
 
 # Fragen?
+
+# Vielen Dank!
