@@ -33,6 +33,6 @@ isGameLost state =
   totalScore state > 21
 
 
-isBlackDice :: forall r . State r -> Boolean
-isBlackDice state =
+is21 :: forall r . State r -> Boolean
+is21 state =
   totalScore state == 21

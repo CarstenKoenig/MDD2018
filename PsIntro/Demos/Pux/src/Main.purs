@@ -79,7 +79,7 @@ update Reset _ =
 -- | Return markup from the state
 view :: State -> HTML Event
 view state = do
-  h1 $ text "Black-Dice"
+  h1 $ text "21..."
   div $ do
     viewScores
     viewTotal
@@ -95,8 +95,8 @@ view state = do
     viewTotal =
       if Game.isGameLost state then
         p $ text ("GAME OVER - " <> show (Game.totalScore state))
-      else if Game.isBlackDice state then
-        p $ text "BLACK DICE!!!"
+      else if Game.is21 state then
+        p $ text "21!!!"
       else
         p $ text ("Score: " <> show (Game.totalScore state))
 

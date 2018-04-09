@@ -1,6 +1,6 @@
 ---
 author: Carsten König
-title: Einführung in PureScript
+title: PureScript
 date: 10. April 2018
 ---
 
@@ -545,7 +545,7 @@ data Event
 ```haskell
 view :: State -> HTML Event
 view state = do
-  h1 $ text "Black-Dice"
+  h1 $ text "21.."
   div $ do
     viewScores
     viewTotal
