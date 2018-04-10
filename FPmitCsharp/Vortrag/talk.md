@@ -33,6 +33,14 @@ date: 10. April 2018
 
 ---
 
+## Lambda Kalkül
+
+- Variablen/Symbole $x,y,a,b,...$
+- Abstraktion $(\lambda \ x . \ M)$
+- Applikation $(\lambda \ x . \ f \ x) \ N \ = \ f \ N$
+
+---
+
 ### Boolsche Werte
 
 $$true := (\lambda \ t \ f \ . \ t)$$
@@ -71,19 +79,6 @@ iter = (n, next, i0) => n (next, i0);
 
 plus = (a, b)        => a (succ, b);
 ```
----
-
-## in C\#
-
-> **OOP** im Großen
-> <br/>
-> **FP** im Kleinen
-
-::: notes
-- Architektur mit OOP
-- für kleinere Details FP benutzen
-- also: Klassen, Interfaces, ...
-::: 
 
 # Funktionen
 
