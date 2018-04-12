@@ -18,6 +18,7 @@ fizzBuzzNumber n =
     _                -> show n
 
 
+
 fizzBuzzNumbers :: Int -> Int -> Array String
 fizzBuzzNumbers from to =
   fizzBuzzNumber <$> range from to

@@ -244,6 +244,152 @@ sagHallo p =
       "Guten Tag " <> p.name
 ```
 
+# UI mit Pux
+
+## Elm Architectur
+
+- **Zustand** wird als *HTML* dargestellt
+- Ereignisse (Click,...) erzeugen **Nachrichten**
+- aus dem aktuellen *Zustand* und einer *Nachricht* wird ein neuer *Zustand* generiert
+- ...
+
+---
+
+## Elm Architectur
+
+```haskell
+
+type State = { .. }
+
+data Event = ...
+
+view :: State -> HTML Event
+
+update :: Event -> State -> EffModel State Event AppEffects
+
+```
+
+---
+
+## Seiteneffekte
+
+- in **Pux** kann die `update` Funktion Seiteneffekte auslösen
+- externe *Signale* können *Events* auslösen
+
+```haskell
+main = do
+  app <- start
+    { initialState: initial
+    , view
+    , foldp: update
+    , inputs: [] -- <- Signale hier bitte
+    }
+
+```
+
+::: notes
+- das optionale Eregnis eines Effekts wird wieder als Nachricht an `update` übergeben
+- `foldp` = Fold-"past"(?)
+:::
+
+## Demo
+
+---
+
+### Zustand
+
+```haskell
+type State = 
+  { scores :: Array Game.Score }
+```
+
+---
+
+### Ereignisse
+
+```haskell
+data Event
+  = Reset
+  | ThrowDice
+  | AddDie Game.Score
+```
+
+---
+
+### View
+
+```haskell
+view :: State -> HTML Event
+view state = do
+  h1 $ text "21.."
+  div $ do
+    viewScores
+    viewTotal
+    span $ do
+      button #! onClick (const ThrowDice) $ text "throw"
+      button #! onClick (const Reset) $ text "reset"
+  where
+    ...
+ ```
+
+---
+
+### Update
+
+noch ein Wurf
+
+```haskell
+update :: Event -> State -> EffModel State Event AppEffects
+update ThrowDice curState
+  | not (Game.isGameOver curState) =
+    { state: curState
+    , effects:
+      [ do
+        score <- liftEff (randomInt 1 6)
+        pure $ Just $ AddDie score
+      ]
+    }
+  | otherwise = 
+    { state: curState, effects: [] }
+```
+
+---
+
+### Update
+
+Zufallsergebnis eingetroffen
+
+```haskell
+update :: Event -> State -> EffModel State Event AppEffects
+update (AddDie score) curState 
+  | not (Game.isGameOver curState) =
+    let state' = Game.addDie score curState 
+    in
+      { state: state'
+      , effects: 
+        [ do
+          when (Game.isGameOver state') $
+            liftEff $ Notify.show "game ended"
+          pure Nothing
+        ]
+      }
+  | otherwise = { state: curState, effects: [] }
+ ```
+
+---
+
+### Update
+
+Reset gedrückt
+
+```haskell
+update :: Event -> State -> EffModel State Event AppEffects
+update Reset _ =
+  { state: initialState, effects: [] }
+```
+
+# next Level
+
 ## Row-Polymorphism
 Records sind eigentlich
 
@@ -466,150 +612,6 @@ exports.show = function (text) {
         ...
     }
 }
-```
-
-# UI mit Pux
-
-## Elm Architectur
-
-- **Zustand** wird als *HTML* dargestellt
-- Ereignisse (Click,...) erzeugen **Nachrichten**
-- aus dem aktuellen *Zustand* und einer *Nachricht* wird ein neuer *Zustand* generiert
-- ...
-
----
-
-## Elm Architectur
-
-```haskell
-
-type State = { .. }
-
-data Event = ...
-
-view :: State -> HTML Event
-
-update :: Event -> State -> EffModel State Event AppEffects
-
-```
-
----
-
-## Seiteneffekte
-
-- in **Pux** kann die `update` Funktion Seiteneffekte auslösen
-- externe *Signale* können *Events* auslösen
-
-```haskell
-main = do
-  app <- start
-    { initialState: initial
-    , view
-    , foldp: update
-    , inputs: [] -- <- Signale hier bitte
-    }
-
-```
-
-::: notes
-- das optionale Eregnis eines Effekts wird wieder als Nachricht an `update` übergeben
-- `foldp` = Fold-"past"(?)
-:::
-
-## Demo
-
----
-
-### Zustand
-
-```haskell
-type State = 
-  { scores :: Array Game.Score }
-```
-
----
-
-### Ereignisse
-
-```haskell
-data Event
-  = Reset
-  | ThrowDice
-  | AddDie Game.Score
-```
-
----
-
-### View
-
-```haskell
-view :: State -> HTML Event
-view state = do
-  h1 $ text "21.."
-  div $ do
-    viewScores
-    viewTotal
-    span $ do
-      button #! onClick (const ThrowDice) $ text "throw"
-      button #! onClick (const Reset) $ text "reset"
-  where
-    ...
- ```
-
----
-
-### Update
-
-noch ein Wurf
-
-```haskell
-update :: Event -> State -> EffModel State Event AppEffects
-update ThrowDice curState
-  | not (Game.isGameOver curState) =
-    { state: curState
-    , effects:
-      [ do
-        score <- liftEff (randomInt 1 6)
-        pure $ Just $ AddDie score
-      ]
-    }
-  | otherwise = 
-    { state: curState, effects: [] }
-```
-
----
-
-### Update
-
-Zufallsergebnis eingetroffen
-
-```haskell
-update :: Event -> State -> EffModel State Event AppEffects
-update (AddDie score) curState 
-  | not (Game.isGameOver curState) =
-    let state' = Game.addDie score curState 
-    in
-      { state: state'
-      , effects: 
-        [ do
-          when (Game.isGameOver state') $
-            liftEff $ Notify.show "game ended"
-          pure Nothing
-        ]
-      }
-  | otherwise = { state: curState, effects: [] }
- ```
-
----
-
-### Update
-
-Reset gedrückt
-
-```haskell
-update :: Event -> State -> EffModel State Event AppEffects
-update Reset _ =
-  { state: initialState, effects: [] }
 ```
 
 # Resourcen

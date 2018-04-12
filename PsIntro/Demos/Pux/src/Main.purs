@@ -12,7 +12,6 @@ import Game as Game
 import Notify (NOTIFY)
 import Notify as Notify
 import Pux (CoreEffects, EffModel, start)
-import Pux.DOM.Events (onClick)
 import Pux.DOM.HTML (HTML)
 import Pux.Renderer.React (renderToDOM)
 import Text.Smolder.HTML (button, div, p, span, h1)

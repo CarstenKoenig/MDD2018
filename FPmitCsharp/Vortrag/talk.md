@@ -4,14 +4,12 @@ title: Funktionale Programmierung in C#
 date: 10. April 2018
 ---
 
-# Agenda
-
-##
+## Agenda
 
 - Einführung
 - Funktionen
 - Daten
-- funkktionale Muster
+- funktionale Muster
 
 # Was ist FP?
 
@@ -473,9 +471,27 @@ public class Name {
 
 # Result Datentyp
 
-## Vorstellung
+## Ziel
 
-soll
+```csharp
+Result<string, int> ergebnis =
+    from zahl1 in Console
+        .ReadLine()
+        .TryParseWith<int>(int.TryParse)
+    from zahl2 in Console
+        .ReadLine()
+        .TryParseWith<int>(int.TryParse)
+    select zahl1 + zahl2;
+
+Console.WriteLine(ergebnis.Match(
+    err => $"Konnte \"{err}\" nicht umwandeln",
+    zahl => $"Ergebnis ist {zahl}"));
+```
+
+
+## Datentyp
+
+ein `Result` soll
 
 - *entweder* einen generischen Wert als **Erfolg**
 - *oder* einen generischen Fehler als **Fehlschlag**
@@ -802,18 +818,14 @@ public static Result<tError, tOut> Bind<tError, tIn, tOut>(
 ### LINQ
 
 ```csharp
-      Result<string, int> ergebnis =
-          from zahl1 in Console
-            .ReadLine()
-            .TryParseWith<int>(int.TryParse)
-          from zahl2 in Console
-            .ReadLine()
-            .TryParseWith<int>(int.TryParse)
-          select zahl1 + zahl2;
-
-      Console.WriteLine(ergebnis.Match(
-          err => $"Konnte \"{err}\" nicht umwandeln",
-          zahl => $"Ergebnis ist {zahl}"));
+Result<string, int> ergebnis =
+    from zahl1 in Console
+        .ReadLine()
+        .TryParseWith<int>(int.TryParse)
+    from zahl2 in Console
+        .ReadLine()
+        .TryParseWith<int>(int.TryParse)
+    select zahl1 + zahl2;
 ```
 
 ---
